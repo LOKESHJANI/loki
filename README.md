@@ -60,6 +60,18 @@ The first voice run downloads the Whisper model (~150 MB), and macOS will ask fo
 
 Configuration is in environment variables; see `.env.example`.
 
+## Developing in VS Code
+
+1. `File → Open Folder…` → `loki`. Accept the "install recommended extensions" prompt.
+2. In the integrated terminal (`` Ctrl+` ``): `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && cp .env.example .env`
+3. `Cmd+Shift+P` → **Python: Select Interpreter** → `.venv`.
+4. **Run and Debug** sidebar (`Cmd+Shift+D`) → pick **LOKI: text mode** or **LOKI: voice mode** → ▶ (F5).
+5. **Testing** sidebar (beaker icon) runs the pytest suite.
+
+Tip: set a breakpoint in `Agent.ask()` in `loki/agent.py` and step through to watch each think → act → observe cycle.
+
+Voice mode: macOS must allow **Visual Studio Code** under System Settings → Privacy & Security → Microphone.
+
 ## Tools (Phase 1)
 
 | Tool | Needs your OK? |

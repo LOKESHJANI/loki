@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "LOKI: text mode",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "loki",
+      "args": ["--text"],
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "LOKI: voice mode",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "loki",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "LOKI: text, no speech",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "loki",
+      "args": ["--text", "--quiet"],
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
