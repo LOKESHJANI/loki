@@ -1,0 +1,101 @@
+"""Tests run without Ollama or a microphone: we swap in a FakeBrain that
+replays scripted LLM replies. This is dependency injection in action."""
+from pathlib import Path
+
+import pytest
+
+from loki import safety
+from loki.agent import Agent
+from loki.config import settings
+from loki.tools import REGISTRY
+from loki.tools.registry import tool
+
+
+class FakeBrain:
+    def __init__(self, replies):
+        self.replies = list(replies)
+        self.seen = []
+
+    def chat(self, messages, tools):
+        self.seen.append(list(messages))
+        return self.replies.pop(0)
+
+
+def reply(content="", calls=None):
+    return {"content": content, "tool_calls": calls or []}
+
+
+@pytest.fixture
+def sandbox(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "allowed_dirs", [tmp_path.resolve()])
+    return tmp_path
+
+
+def test_schema_built_from_docstring():
+    schema = REGISTRY["read_file"].schema()["function"]
+    assert schema["name"] == "read_file"
+    assert schema["parameters"]["required"] == ["path"]
+    assert "File path" in schema["parameters"]["properties"]["path"]["description"]
+
+
+def test_plain_answer_needs_no_tools():
+    agent = Agent(FakeBrain([reply("Hello Bharath")]), confirm=lambda *_: True)
+    assert agent.ask("hi") == "Hello Bharath"
+
+
+def test_agent_runs_tool_and_feeds_result_back(sandbox):
+    (sandbox / "todo.txt").write_text("buy milk")
+    brain = FakeBrain(
+        [
+            reply(calls=[{"name": "read_file", "arguments": {"path": str(sandbox / "todo.txt")}}]),
+            reply("Your todo says buy milk."),
+        ]
+    )
+    agent = Agent(brain, confirm=lambda *_: True)
+    assert agent.ask("what's on my todo?") == "Your todo says buy milk."
+    tool_msg = brain.seen[1][-1]
+    assert tool_msg["role"] == "tool" and tool_msg["content"] == "buy milk"
+
+
+def test_dangerous_tool_blocked_when_user_declines(sandbox):
+    target = sandbox / "x.txt"
+    brain = FakeBrain(
+        [
+            reply(calls=[{"name": "write_file", "arguments": {"path": str(target), "content": "hi"}}]),
+            reply("Okay, I didn't write it."),
+        ]
+    )
+    Agent(brain, confirm=lambda *_: False).ask("write a file")
+    assert not target.exists()
+    assert "declined" in brain.seen[1][-1]["content"]
+
+
+def test_sandbox_blocks_paths_outside_allowed(sandbox):
+    with pytest.raises(safety.PermissionDenied):
+        safety.safe_path(str(sandbox / ".." / "secret.txt"))
+
+
+def test_tool_errors_do_not_crash_agent(sandbox):
+    @tool()
+    def boom() -> str:
+        """Always fails."""
+        raise RuntimeError("kaboom")
+
+    try:
+        brain = FakeBrain([reply(calls=[{"name": "boom", "arguments": {}}]), reply("That failed.")])
+        assert Agent(brain, confirm=lambda *_: True).ask("go") == "That failed."
+        assert "kaboom" in brain.seen[1][-1]["content"]
+    finally:
+        REGISTRY.pop("boom")
+
+
+def test_step_limit_stops_infinite_loops():
+    looping = [reply(calls=[{"name": "get_datetime", "arguments": {}}])] * 3
+    agent = Agent(FakeBrain(looping), confirm=lambda *_: True, max_steps=3)
+    assert "more steps" in agent.ask("loop forever")
+
+
+def test_unknown_tool_is_reported():
+    brain = FakeBrain([reply(calls=[{"name": "hack_nasa", "arguments": {}}]), reply("Can't do that.")])
+    Agent(brain, confirm=lambda *_: True).ask("x")
+    assert "no tool called" in brain.seen[1][-1]["content"]
