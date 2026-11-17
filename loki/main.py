@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 
 from .agent import Agent
 from .brain import OllamaBrain
@@ -72,8 +73,13 @@ def main() -> None:
         if user_text.strip().lower().rstrip(".!") in EXIT_WORDS:
             break
 
-        answer = agent.ask(user_text)
-        print(f"{CYAN}loki:{RESET} {answer}\n")
+        print(f"{DIM}  thinking...{RESET}", flush=True)
+        started = time.perf_counter()
+        try:
+            answer = agent.ask(user_text)
+        except Exception as e:  # e.g. Ollama not running
+            answer = f"I couldn't reach my brain ({type(e).__name__}: {e}). Is Ollama running?"
+        print(f"{CYAN}loki:{RESET} {answer} {DIM}({time.perf_counter() - started:.1f}s){RESET}\n")
         if not args.quiet:
             speaker.say(answer)
 
