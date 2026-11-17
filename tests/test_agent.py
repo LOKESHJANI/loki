@@ -99,3 +99,15 @@ def test_unknown_tool_is_reported():
     brain = FakeBrain([reply(calls=[{"name": "hack_nasa", "arguments": {}}]), reply("Can't do that.")])
     Agent(brain, confirm=lambda *_: True).ask("x")
     assert "no tool called" in brain.seen[1][-1]["content"]
+
+
+def test_text_tool_call_fallback_parses_known_tools_only():
+    from loki.brain import extract_text_tool_calls
+
+    known = {"get_datetime", "read_file"}
+    tagged = '<tool_call>{"name": "read_file", "arguments": {"path": "~/x.txt"}}</tool_call>'
+    assert extract_text_tool_calls(tagged, known) == [{"name": "read_file", "arguments": {"path": "~/x.txt"}}]
+    bare = 'Sure: {"name": "get_datetime", "arguments": {}}'
+    assert extract_text_tool_calls(bare, known) == [{"name": "get_datetime", "arguments": {}}]
+    assert extract_text_tool_calls('{"name": "delete_everything", "arguments": {}}', known) == []
+    assert extract_text_tool_calls("The current time is [get_datetime].", known) == []
