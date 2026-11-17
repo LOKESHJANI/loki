@@ -1,0 +1,20 @@
+[project]
+name = "loki"
+version = "0.1.0"
+description = "A local, voice-driven personal AI agent for macOS"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[project.scripts]
+loki = "loki.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["loki*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
