@@ -91,6 +91,8 @@ def main() -> None:
         if not args.quiet:
             speaker.say(answer)
 
+    if listener:
+        listener.close()
     print("LOKI offline.")
     if not args.quiet:
         speaker.say("Goodbye.")
