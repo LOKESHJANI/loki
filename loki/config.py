@@ -31,6 +31,7 @@ class Settings:
     # Voice
     voice: str = field(default_factory=lambda: os.getenv("LOKI_VOICE", "Daniel"))  # macOS `say -v ?` lists voices
     whisper_model: str = field(default_factory=lambda: os.getenv("LOKI_WHISPER_MODEL", "base.en"))
+    whisper_device: str = field(default_factory=lambda: os.getenv("LOKI_WHISPER_DEVICE", "cpu"))  # "mps" = Apple GPU (experimental)
 
     # Agent loop guard: max think->act cycles per request.
     max_steps: int = field(default_factory=lambda: int(os.getenv("LOKI_MAX_STEPS", "8")))

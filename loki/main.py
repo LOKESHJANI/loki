@@ -50,7 +50,7 @@ def main() -> None:
         from .voice.listen import Listener
 
         print(f"{DIM}Loading speech model ({settings.whisper_model})...{RESET}")
-        listener = Listener(settings.whisper_model)
+        listener = Listener(settings.whisper_model, device=settings.whisper_device)
 
     print(f"{CYAN}LOKI online.{RESET} Model: {settings.model}. Say or type 'goodbye' to exit.\n")
     if not args.quiet:
@@ -59,10 +59,18 @@ def main() -> None:
     while True:
         try:
             if listener:
-                input(f"{DIM}[press Enter and speak]{RESET} ")
-                print(f"{DIM}listening...{RESET}")
-                user_text = listener.listen()
-                print(f"you: {user_text}")
+                typed = input(f"{DIM}[press Enter and speak, or type a message]{RESET} ")
+                if typed.strip():
+                    user_text = typed
+                else:
+                    print(f"{DIM}listening...{RESET}")
+                    try:
+                        user_text = listener.listen()
+                    except Exception as e:  # mic glitches shouldn't kill LOKI
+                        print(f"{YELLOW}Microphone error ({e}). Type your message instead.{RESET}")
+                        user_text = input("you: ")
+                    else:
+                        print(f"you: {user_text}")
             else:
                 user_text = input("you: ")
         except (EOFError, KeyboardInterrupt):
