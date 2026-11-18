@@ -1,14 +1,33 @@
 """Central settings for LOKI.
 
 Everything is read from environment variables so you can change behaviour
-without editing code (12-factor style). Copy `.env.example` to `.env` and
-`export $(cat .env | xargs)` or set them in your shell.
+without editing code (12-factor style). Copy `.env.example` to `.env`; it is
+loaded automatically. Variables already set in your shell take priority.
 """
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def load_dotenv(path: Path = PROJECT_ROOT / ".env") -> None:
+    """Minimal .env reader (no extra dependency). Real environment variables win."""
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key.strip(), value)
+
+
+load_dotenv()
 
 
 def _paths(env_var: str, default: list[str]) -> list[Path]:
@@ -34,6 +53,9 @@ class Settings:
     voice: str = field(default_factory=lambda: os.getenv("LOKI_VOICE", "Daniel"))  # macOS `say -v ?` lists voices
     whisper_model: str = field(default_factory=lambda: os.getenv("LOKI_WHISPER_MODEL", "base.en"))
     whisper_device: str = field(default_factory=lambda: os.getenv("LOKI_WHISPER_DEVICE", "cpu"))  # "mps" = Apple GPU (experimental)
+
+    # Browser used by open_url when none is named ("" = system default browser)
+    browser: str = field(default_factory=lambda: os.getenv("LOKI_BROWSER", ""))
 
     # Agent loop guard: max think->act cycles per request.
     max_steps: int = field(default_factory=lambda: int(os.getenv("LOKI_MAX_STEPS", "8")))

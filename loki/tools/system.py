@@ -29,16 +29,25 @@ def open_application(name: str) -> str:
 
 
 @tool()
-def open_url(url: str) -> str:
-    """Open a web page in the default browser.
+def open_url(url: str, browser: str = "") -> str:
+    """Open a web page in a browser.
 
     Args:
         url: Full URL, e.g. "https://github.com".
+        browser: Optional browser app name, e.g. "Google Chrome" or "Safari". Leave empty to use the user's preferred browser.
     """
+    from ..config import settings
+
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
+    browser = browser or settings.browser
+    if browser and platform.system() == "Darwin":
+        result = subprocess.run(["open", "-a", browser, url], capture_output=True, text=True)
+        if result.returncode != 0:
+            return f"Could not open {url} in {browser}: {result.stderr.strip()}"
+        return f"Opened {url} in {browser}"
     webbrowser.open(url)
-    return f"Opened {url}"
+    return f"Opened {url} in the system default browser"
 
 
 @tool(dangerous=True)
