@@ -44,7 +44,7 @@ loki: I found Bharath_Resume_2026.pdf in your Documents folder.
 # 1. Install Ollama and pull a model that supports tool calling
 brew install ollama portaudio
 ollama serve &              # or open the Ollama app
-ollama pull qwen2.5:7b
+ollama pull qwen2.5:3b     # 8 GB Mac; use qwen2.5:7b with 16 GB+
 
 # 2. Set up LOKI
 git clone https://github.com/<you>/loki.git && cd loki

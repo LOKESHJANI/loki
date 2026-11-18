@@ -36,7 +36,7 @@ def main() -> None:
     args = parser.parse_args()
 
     agent = Agent(
-        brain=OllamaBrain(settings.model, settings.ollama_host),
+        brain=OllamaBrain(settings.model, settings.ollama_host, keep_alive=settings.keep_alive),
         confirm=confirm_in_terminal,
         max_steps=settings.max_steps,
         on_event=show_event,

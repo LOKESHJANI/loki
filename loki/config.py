@@ -20,8 +20,10 @@ def _paths(env_var: str, default: list[str]) -> list[Path]:
 @dataclass
 class Settings:
     # The "brain": any Ollama model that supports tool calling.
-    model: str = field(default_factory=lambda: os.getenv("LOKI_MODEL", "qwen2.5:7b"))
+    model: str = field(default_factory=lambda: os.getenv("LOKI_MODEL", "qwen2.5:3b"))
     ollama_host: str = field(default_factory=lambda: os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+    # How long Ollama keeps the model in RAM after a reply ("2m", "30s", "0" = unload immediately).
+    keep_alive: str = field(default_factory=lambda: os.getenv("LOKI_KEEP_ALIVE", "2m"))
 
     # Sandbox: LOKI may only touch files inside these folders.
     allowed_dirs: list[Path] = field(

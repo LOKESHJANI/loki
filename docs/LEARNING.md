@@ -21,13 +21,13 @@ That's the core of every "AI agent", from JARVIS demos to Claude Code. The model
 
 ## 2. The brain: running an LLM locally with Ollama (`loki/brain.py`)
 
-[Ollama](https://ollama.com) runs open-weight models (Llama, Qwen, Mistral) on your Mac and exposes a local HTTP API at `localhost:11434`. We use `qwen2.5:7b` because it's good at tool calling and fits in about 5 GB of RAM.
+[Ollama](https://ollama.com) runs open-weight models (Llama, Qwen, Mistral) on your Mac and exposes a local HTTP API at `localhost:11434`. We default to `qwen2.5:3b` (about 2 GB of RAM) so it runs comfortably on an 8 GB Mac; `qwen2.5:7b` (about 5 GB) is smarter at picking tools if you have 16 GB or more. LOKI also passes `keep_alive` so Ollama unloads the model 2 minutes after the last reply, which is choosing a model size and memory policy to fit the hardware.
 
 `brain.py` is an **adapter**. The agent only knows that a brain has a `chat(messages, tools)` method returning `{"content", "tool_calls"}`. To switch to Claude or GPT later, you write one new class.
 
 **Try it:**
 ```bash
-ollama run qwen2.5:7b "Explain tool calling in one sentence"
+ollama run qwen2.5:3b "Explain tool calling in one sentence"
 ```
 
 > **Say it in an interview:** "I used the adapter pattern so the LLM provider is swappable. Local Ollama costs nothing and keeps data private, and a hosted model can be plugged in when I need more reasoning power."
@@ -138,7 +138,7 @@ All 8 tests run in under a second, with no Ollama and no microphone.
 ## 8. Running it yourself, step by step
 
 1. `brew install ollama portaudio` (portaudio is needed for the microphone)
-2. Open the Ollama app, then `ollama pull qwen2.5:7b`
+2. Open the Ollama app, then `ollama pull qwen2.5:3b` (or `qwen2.5:7b` with 16 GB+ RAM)
 3. `python3 -m venv .venv && source .venv/bin/activate`
 4. `pip install -r requirements.txt`
 5. `pytest -q`, which should show 8 passing tests

@@ -46,16 +46,20 @@ def extract_text_tool_calls(content: str, known_tools: set[str]) -> list[dict]:
 class OllamaBrain:
     """Talks to a local Ollama server (https://ollama.com)."""
 
-    def __init__(self, model: str, host: str, temperature: float = 0.0):
+    def __init__(self, model: str, host: str, temperature: float = 0.0, keep_alive: str = "2m"):
         import ollama  # imported lazily so tests don't need it
 
         self.model = model
         self.client = ollama.Client(host=host)
         # Temperature 0 = most predictable output, which makes tool use reliable.
         self.options = {"temperature": temperature}
+        # Unload the model from RAM this long after the last reply (matters on 8 GB Macs).
+        self.keep_alive = keep_alive
 
     def chat(self, messages: list[dict], tools: list[dict]) -> dict:
-        response = self.client.chat(model=self.model, messages=messages, tools=tools, options=self.options)
+        response = self.client.chat(
+            model=self.model, messages=messages, tools=tools, options=self.options, keep_alive=self.keep_alive
+        )
         msg = response.message
         content = msg.content or ""
         calls = [
