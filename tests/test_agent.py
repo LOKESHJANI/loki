@@ -111,3 +111,29 @@ def test_text_tool_call_fallback_parses_known_tools_only():
     assert extract_text_tool_calls(bare, known) == [{"name": "get_datetime", "arguments": {}}]
     assert extract_text_tool_calls('{"name": "delete_everything", "arguments": {}}', known) == []
     assert extract_text_tool_calls("The current time is [get_datetime].", known) == []
+
+
+def test_system_prompt_covers_web_rules():
+    from loki.agent import SYSTEM_PROMPT
+
+    assert "web_search" in SYSTEM_PROMPT and "read_webpage" in SYSTEM_PROMPT
+    assert "UNTRUSTED WEB CONTENT" in SYSTEM_PROMPT
+    assert "CANNOT" in SYSTEM_PROMPT
+
+
+def test_agent_chains_search_then_read(sandbox, monkeypatch):
+    from loki.tools import web
+
+    monkeypatch.setattr(web, "_search", lambda q, n: [{"title": "T", "href": "https://example.org", "body": "b"}])
+    monkeypatch.setattr(web, "is_public_host", lambda h: True)
+    monkeypatch.setattr(web, "_fetch", lambda u: "<html/>")
+    monkeypatch.setattr(web, "_extract_text", lambda h: "The answer is 42.")
+    brain = FakeBrain(
+        [
+            reply(calls=[{"name": "web_search", "arguments": {"query": "answer"}}]),
+            reply(calls=[{"name": "read_webpage", "arguments": {"url": "https://example.org"}}]),
+            reply("It's 42, according to example.org."),
+        ]
+    )
+    assert Agent(brain, confirm=lambda *_: True).ask("what is the answer?") == "It's 42, according to example.org."
+    assert "The answer is 42." in brain.seen[2][-1]["content"]
