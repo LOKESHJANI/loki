@@ -137,3 +137,23 @@ def test_agent_chains_search_then_read(sandbox, monkeypatch):
     )
     assert Agent(brain, confirm=lambda *_: True).ask("what is the answer?") == "It's 42, according to example.org."
     assert "The answer is 42." in brain.seen[2][-1]["content"]
+
+
+def test_trim_history_keeps_system_prompt_and_starts_at_user(monkeypatch):
+    from loki import agent as agent_mod
+
+    monkeypatch.setattr(agent_mod, "MAX_HISTORY_CHARS", 100)
+    a = Agent(FakeBrain([]), confirm=lambda *_: True)
+    system = a.history[0]
+    for i in range(5):
+        a.history += [
+            {"role": "user", "content": f"q{i}" * 10},
+            {"role": "assistant", "content": "", "tool_calls": []},
+            {"role": "tool", "content": "r" * 30},
+            {"role": "assistant", "content": "a" * 10},
+        ]
+    a.trim_history()
+    assert a.history[0] is system
+    assert a.history[1]["role"] == "user"
+    assert sum(len(m["content"]) for m in a.history[1:]) <= 100
+    assert a.history[-1]["content"] == "a" * 10  # newest turn survives

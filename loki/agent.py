@@ -44,6 +44,9 @@ Rules:
 ConfirmFn = Callable[[str, dict], bool]
 EventFn = Callable[[str, str], None]
 MAX_RESULT_CHARS = 6000
+# Rough budget for the conversation sent to the model (~4 chars per token).
+# Keeps us well inside an 8k-token context window, leaving room for tool schemas.
+MAX_HISTORY_CHARS = 18_000
 
 
 class Agent:
@@ -66,8 +69,25 @@ class Agent:
     def tool_schemas(self) -> list[dict]:
         return [t.schema() for t in self.tools.values()]
 
+    def trim_history(self) -> None:
+        """Forget the oldest turns when the conversation gets too long.
+
+        The system prompt (history[0]) is always kept. We cut at a user message
+        so we never leave a tool result without the request that caused it.
+        """
+        def size(msgs):
+            return sum(len(str(m.get("content", ""))) for m in msgs)
+
+        system, rest = self.history[:1], self.history[1:]
+        while size(rest) > MAX_HISTORY_CHARS and len(rest) > 1:
+            rest = rest[1:]
+            while rest and rest[0]["role"] != "user":
+                rest = rest[1:]
+        self.history = system + rest
+
     def ask(self, user_text: str) -> str:
         self.history.append({"role": "user", "content": user_text})
+        self.trim_history()
 
         for _ in range(self.max_steps):
             reply = self.brain.chat(self.history, self.tool_schemas)
