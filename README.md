@@ -72,14 +72,23 @@ Tip: set a breakpoint in `Agent.ask()` in `loki/agent.py` and step through to wa
 
 Voice mode: macOS must allow **Visual Studio Code** under System Settings → Privacy & Security → Microphone.
 
-## Tools (Phase 1)
+## Tools
 
-| Tool | Needs your OK? |
-|---|---|
-| `list_directory`, `read_file`, `search_files` | No (sandboxed) |
-| `write_file` | **Yes** |
-| `get_datetime`, `open_application`, `open_url` | No |
-| `run_shell_command` | **Yes** |
+| Tool | Phase | Needs your OK? |
+|---|---|---|
+| `list_directory`, `read_file`, `search_files` | 1 | No (sandboxed) |
+| `write_file` | 1 | **Yes** |
+| `get_datetime`, `open_application`, `open_url` | 1 | No |
+| `run_shell_command` | 1 | **Yes** |
+| `web_search` | 2 | No |
+| `read_webpage` | 2 | No (public sites only) |
+
+```
+you:  "Who is the current Chief Minister of Tamil Nadu?"
+  -> web_search({'query': 'current Chief Minister of Tamil Nadu'})
+  <- 1. ... (snippets from the web)
+loki: According to ..., the Chief Minister is ...
+```
 
 ## Tests
 
@@ -90,7 +99,7 @@ The tests use a fake brain, so they run in milliseconds without Ollama or a micr
 
 ## Roadmap
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md). Next up: browser automation, Gmail, long-term memory, wake word and a web dashboard.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md). Next up: Gmail, long-term memory, wake word and a web dashboard.
 
 ## Learn how it works
 
